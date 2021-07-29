@@ -4618,7 +4618,8 @@ function find_mdw(collw, coll) {
 		if(MDW === MAX_MDW) MDW = DEF_MDW;
 	}
 }
-
+var DEF_PPI = 96, PPI = DEF_PPI;
+function px2pt(px) { return px * 96 / PPI; }
 /* [MS-EXSPXML3] 2.4.54 ST_enmPattern */
 var XLMLPatternTypeMap = {
 	"None": "none",
@@ -7669,7 +7670,7 @@ function write_ws_xml_cols(ws, cols) {
 }
 
 function write_ws_xml_cell(cell, ref, ws, opts, idx, wb) {
-	if(cell.v === undefined && cell.s === undefined && (!cell.f)) return "";
+	if(cell.v === undefined && cell.s === undefined) return "";
 	var vv = "";
 	var oldt = cell.t, oldv = cell.v;
 	switch(cell.t) {
@@ -7686,7 +7687,7 @@ function write_ws_xml_cell(cell, ref, ws, opts, idx, wb) {
 			break;
 		default: vv = cell.v; break;
 	}
-	var v = (cell.f ? writetag('f', escapexml(cell.f)) : writetag('v', escapexml(vv))), o = {r:ref};
+	var v = writetag('v', escapexml(vv)), o = {r:ref};
 	/* TODO: cell style */
 	var os = get_cell_style(opts.cellXfs, cell, opts);
 	if(os !== 0) o.s = os;
@@ -7811,7 +7812,7 @@ return function parse_ws_xml_data(sdata, s, opts, guess) {
 }; })();
 
 function write_ws_xml_data(ws, opts, idx, wb) {
-	var o = [], r = [], range = safe_decode_range(ws['!ref']), cell, ref, rr = "", cols = [], R, C;
+	var o = [], r = [], range = safe_decode_range(ws['!ref']), cell, ref, rr = "", cols = [], R, C, rows = ws['!rows'];
 	for(C = range.s.c; C <= range.e.c; ++C) cols[C] = encode_col(C);
 	for(R = range.s.r; R <= range.e.r; ++R) {
 		r = [];
@@ -7821,7 +7822,33 @@ function write_ws_xml_data(ws, opts, idx, wb) {
 			if(ws[ref] === undefined) continue;
 			if((cell = write_ws_xml_cell(ws[ref], ref, ws, opts, idx, wb)) != null) r.push(cell);
 		}
-		if(r.length > 0) o[o.length] = (writextag('row', r.join(""), {r:rr}));
+		if(r.length > 0){
+			params = ({r:rr});
+			if(rows && rows[R]) {
+				row = rows[R];
+				if(row.hidden) params.hidden = 1;
+				height = -1;
+				if(row.hpx) height = px2pt(row.hpx);
+				else if(row.hpt) height = row.hpt;
+				if(height > -1) { params.ht = height; params.customHeight = 1; }
+				if(row.level) { params.outlineLevel = row.level; }
+			}
+			o[o.length] = (writextag('row', r.join(""), params));
+		}  
+		// o[o.length] = (writextag('row', r.join(""), {r:rr}));
+	}
+	if(rows) for(; R < rows.length; ++R) {
+		if(rows && rows[R]) {
+			params = ({r:R+1});
+			row = rows[R];
+			if(row.hidden) params.hidden = 1;
+			height = -1;
+			if (row.hpx) height = px2pt(row.hpx);
+			else if (row.hpt) height = row.hpt;
+			if (height > -1) { params.ht = height; params.customHeight = 1; }
+			if (row.level) { params.outlineLevel = row.level; }
+			o[o.length] = (writextag('row', "", params));
+		}
 	}
 	return o.join("");
 }
