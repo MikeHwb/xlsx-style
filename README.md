@@ -7,3 +7,5 @@ Parser and writer for various spreadsheet formats.  Pure-JS cleanroom implementa
 **NOTE:** [This project](https://github.com/MikeHwb/xlsx-style-pro) is a fork of the original (and awesome) [SheetJS/xlsx](https://github.com/MikeHwb/xlsx-style-pro) project.
 It is extended to enable cell formats to be read from and written to .xlsx workbooks.
 
+# style of writing
+workbooks['!rows'].push({ hpx: xxx})
