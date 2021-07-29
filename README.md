@@ -1,4 +1,5 @@
 # xlsx-style
+<!-- XLSX is optimized so that row heights can be modified -->
 
 Parser and writer for various spreadsheet formats.  Pure-JS cleanroom implementation from official specifications and related documents.
 
